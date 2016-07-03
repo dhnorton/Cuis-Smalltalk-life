@@ -1,6 +1,6 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2835] on 2 July 2016 at 7:22:32.30649 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2835] on 2 July 2016 at 10:33:56.570346 pm'!
 'Description Please enter a description for this package'!
-!provides: 'Life' 1 62!
+!provides: 'Life' 1 63!
 !classDefinition: #LifeModel category: #Life!
 TextModel subclass: #LifeModel
 	instanceVariableNames: 'shape cells cellIndex'
@@ -1372,13 +1372,18 @@ cellSize
 	
 	^ 30! !
 
-!LifeView class methodsFor: 'examples' stamp: 'dhn 6/26/2016 08:37'!
+!LifeView class methodsFor: 'examples' stamp: 'dhn 7/2/2016 22:31'!
 example
+	"
+	LifeView example
+	"
+	| life |
 
-		LifeView rows: 8 cols: 9
+	life _ LifeView rows: 8 cols: 9.
+	life label: 'LIFE Example'
 ! !
 
-!LifeView class methodsFor: 'examples' stamp: 'dhn 6/30/2016 18:16'!
+!LifeView class methodsFor: 'examples' stamp: 'dhn 7/2/2016 22:28'!
 example1
 	"The pentadecathlon, a pulsar of period 15
 	
@@ -1387,7 +1392,9 @@ example1
 	| view |
 	
 	view _ LifeView rows: 10 cols: 18.
-	view model set: view model class pentadec at: 4@1.
+	view label: 'A LIFE Example'.
+	view model set: view model class pentadec third at: #(4 1).
+	view sayRun
 ! !
 
 !LifeView class methodsFor: 'documentation' stamp: 'dhn 6/26/2016 07:21'!
