@@ -8,8 +8,6 @@ Techniques of Interest
 
 - Model is independent of the views
 
-- Example of updating all views when one view changes
-
 - Example of changing one view having no effect on other views
 
 - Use of #when:send:to: and #triggerEvent: for communication between view and model (Observer Pattern)
