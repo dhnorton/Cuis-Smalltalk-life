@@ -1,6 +1,6 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2829] on 4 July 2016 at 3:49:21.125706 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2829] on 4 July 2016 at 4:08:43.945706 pm'!
 'Description Please enter a description for this package'!
-!provides: 'Life' 1 64!
+!provides: 'Life' 1 65!
 !classDefinition: #LifeModel category: #Life!
 TextModel subclass: #LifeModel
 	instanceVariableNames: 'shape cells cellIndex'
@@ -1206,7 +1206,7 @@ buildMorphicWindow
 	model when: #gridMenu send: #menuMain to: self.
 	model when: #period send: #updateTitle to: self! !
 
-!LifeView methodsFor: 'menu' stamp: 'dhn 7/4/2016 15:43'!
+!LifeView methodsFor: 'menu' stamp: 'dhn 7/4/2016 15:59'!
 experiment
 	"Open a clean sheet at a scale and extent"
 	 | xy grid jk ext |
@@ -1221,13 +1221,21 @@ experiment
 				dat _ jk findTokens: 'x' keep: ($0 to: $9).
 				ext _ {dat second asNumber. dat first asNumber}.
 				win _ self class rows: grid first cols: grid second.
-				win morphExtent: (Point x: ext first y: ext second).
-				win morphPosition: Display center - (win morphExtent / 2.0).
+				win extentAndPosition: (Point x: ext first y: ext second).
 				win setLabel: 'Experiment'.
 				win label: 'Experiment'.
 				]
 			ifEmpty: [^ nil]
 		].! !
+
+!LifeView methodsFor: 'initialization' stamp: 'dhn 7/4/2016 15:57'!
+extentAndPosition: aPoint
+	"Set the extent of the receiver and center it in the display"
+	
+	self 
+		morphExtent: aPoint;
+		morphPosition: Display center - (self morphExtent / 2.0)
+	! !
 
 !LifeView methodsFor: 'initialization' stamp: 'dhn 6/28/2016 11:12'!
 initialize
@@ -1255,7 +1263,7 @@ lines: anObject
 	
 	lines _ anObject! !
 
-!LifeView methodsFor: 'menu' stamp: 'dhn 7/4/2016 15:41'!
+!LifeView methodsFor: 'menu' stamp: 'dhn 7/4/2016 16:00'!
 loadPattern
 	"Load a life form selected from a menu"
 	| items n arr siz nww ext |
@@ -1273,8 +1281,7 @@ loadPattern
 		nww label: (model class patternNames at: n) first.
 		nww setLabel: nww label.
 		ext _ arr fourth.
-		nww morphExtent: (Point x: ext second y: ext first).
-		nww morphPosition: Display center - (nww morphExtent / 2.0).
+		nww extentAndPosition: (Point x: ext second y: ext first).
 		self delete "delete old view"]! !
 
 !LifeView methodsFor: 'menu' stamp: 'dhn 7/2/2016 11:47'!
@@ -1405,7 +1412,7 @@ how
 	LifeView rows: 8 cols: 9
 	"! !
 
-!LifeView class methodsFor: 'instance creation' stamp: 'dhn 7/4/2016 15:39'!
+!LifeView class methodsFor: 'instance creation' stamp: 'dhn 7/4/2016 15:58'!
 rows: rows cols: cols
 	"Set up a game of Life on a grid of rows x cols"
 	| mod win xx yy |
@@ -1414,8 +1421,7 @@ rows: rows cols: cols
 	win _ self open: mod label: mod class defaultLabel.
 	xx _ 2 + self cellSize * cols.
 	yy _ 2 + self cellSize * rows + 22.
-	win morphExtent: (Point x: xx y: yy).
-	win morphPosition: Display center - (win morphExtent / 2.0).
+	win extentAndPosition: (Point x: xx y: yy).
 	win lines: mod class menuLines.
 	win when: #morphicStep evaluate: [ :unused | mod nextState].
 	^ win! !
