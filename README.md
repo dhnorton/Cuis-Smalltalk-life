@@ -31,6 +31,8 @@ Dozens of patterns are available for loading.
 ####Tested in Cuis 4.2  rev 2835
  
 ####References
+ConwayLife.com
+
 Gardner, Martin, "Mathematical Games", Scientific American, October 1970, February 1971
 
 "Some Facts of Life", Byte Magazine, December 1978
