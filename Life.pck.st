@@ -1,9 +1,11 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2829] on 6 July 2016 at 10:09:29.665138 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2829] on 7 July 2016 at 1:08:29.306886 pm'!
 'Description The game of Life, an example of a cellular automaton, developed by Prof. John H. Conway at the University of Cambridge.
 
+References:
+ConwayLife.com
 Gardner, Martin, "Mathematical Games", Scientific American, October 1970, February 1971
 "Some Facts of Life", Byte Magazine, December 1978'!
-!provides: 'Life' 1 0!
+!provides: 'Life' 1 3!
 !classDefinition: #LifeModel category: #Life!
 TextModel subclass: #LifeModel
 	instanceVariableNames: 'shape cells cellIndex'
@@ -118,7 +120,7 @@ nextState
 	self triggerEvent: #stateChanged.
 	self triggerEvent: #period! !
 
-!LifeModel methodsFor: 'initialization' stamp: 'dhn 7/6/2016 20:28'!
+!LifeModel methodsFor: 'initialization' stamp: 'dhn 7/7/2016 10:04'!
 set: pattern at: coords
 	"Load pattern into cells, starting at: coords, specifying the upper left cell location"
 	"A pattern should be a collection of rows of equal length which are used to set initial state"
@@ -126,13 +128,13 @@ set: pattern at: coords
 	
 	arr _ LifeArray height: pattern size width: pattern first size.
 	arr fillWithArrayOfArrays: pattern.
-	left _ coords second - 1 min: 0.
-	depth _ (coords first - 1 min: 0) + arr height.
+	left _ coords y - 1 min: 0.
+	depth _ (coords x - 1 min: 0) + arr height.
 	(cells width >= (left + arr width) and: [cells height >= depth]) 
 		ifTrue: [
 			(0 to: (arr height - 1)) do: [:row | 
 				(0 to: (arr width - 1)) do: [:col | 
-					cells i: row + coords first j: col + coords second put: (arr i: row + 1 j: col + 1)]].
+					cells i: row + coords x j: col + coords y put: (arr i: row + 1 j: col + 1)]].
 			self triggerEvent: #stateChanged]
 		ifFalse: [nil inform: 'Life form too big for grid or 
 not located high enough.']
@@ -173,13 +175,13 @@ surrounding: aPoint
 	^ sur select: [:p | p y <= shape y and: [p y > 0]]
 ! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:44'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:42'!
 basic
 	"Basic Shuttle"
 	
 	^ #(
-		#(8 22)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'8@22'	"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0)
@@ -190,16 +192,16 @@ basic
 			#(0 0 0 0 0 0 1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0)
 			#(0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0)
 			)
-		#(250 502) 	"extent := #(ver hor) for morph"
-		)! !
+		'500@250' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:01'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 10:10'!
 beacon
 	"Beacon"
 	
 	^ #(
-		#(5 6)		"grid size := #(rows columns)"
-		#(1 2) 	"position := #(x y) to load pattern"
+		'5@6'		"grid size rows@columns"
+		'1@2' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(1 1 0 0)
@@ -207,17 +209,16 @@ beacon
 			#(0 0 0 1)
 			#(0 0 1 1)
 			)
-		#(182 192) 	"extent := #(ver hor) for morph"
-		)
-		! !
+		'182@192' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:07'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:33'!
 berloaf
 	"Berloaflmeter, a period 7 object"
 	
 	^ #(
-		#(11 11)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'11@11'	"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 0 1 0 0 0 0 0)
@@ -231,16 +232,16 @@ berloaf
 			#(0 0 0 0 0 1 1 0 0 0 0)
 			#(0 0 0 0 0 1 1 0 0 0 0)
 			)
-		#(380 350) 	"extent := #(ver hor) for morph"
-		)! !
+		'350@380' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:17'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 10:58'!
 bipole
 	"Bipole"
 	
 	^ #(
-		#(6 5)		"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'6@5'		"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(1 1 0 0 0)
@@ -249,30 +250,30 @@ bipole
 			#(0 0 1 0 1)
 			#(0 0 0 1 1)
 			)
-		#(216 160) 	"extent := #(ver hor) for morph"
-		)! !
+		'170@220' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 19:50'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 10:00'!
 blinker
 	"Blinker"
 	
 	^ #(
-		#(4 5)		"grid size := #(rows columns)"
-		#(2 2) 	"position := #(x y) to load pattern"
+		'4@5'		"grid size rows@columns"
+		'2@2' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(1 1 1)
 			)
-		#(150 160) 	"extent := #(ver hor) for morph"
-		)! !
+		'150@160' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:04'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 10:12'!
 clock
 	"Clock"
 	
 	^ #(
-		#(5 6)		"grid size := #(rows columns)"
-		#(1 2) 	"position := #(x y) to load pattern"
+		'5@6'		"grid size rows@columns"
+		'1@2' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 1 0)
@@ -280,9 +281,8 @@ clock
 			#(0 1 0 1)
 			#(0 1 0 0)
 			)
-		#(182 192) 	"extent := #(ver hor) for morph"
-		)
-		! !
+		'182@192' 	"extent hor@ver for morph"
+		) evalStrings! !
 
 !LifeModel class methodsFor: 'documentation' stamp: 'dhn 6/28/2016 14:59'!
 defaultLabel
@@ -290,13 +290,13 @@ defaultLabel
 	
 	^ 'The Game of Life'! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:09'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:46'!
 eaterBoundA
 	"Eater Bound Oscillator A"
 	
 	^ #(
-		#(18 20)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'18@20'	"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0)
@@ -317,16 +317,16 @@ eaterBoundA
 			#(0 0 0 1 0 1 0 0 0 0 0 0 0 0 1 0 1 0 0 0)
 			#(0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0)
 			)
-		#(380 350) 	"extent := #(ver hor) for morph"
-		)! !
+		'350@380' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:47'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:48'!
 eaterBoundB
 	"Eater Bound Oscillator B"
 	
 	^ #(
-		#(14 12)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'14@12'	"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(1 0 0 0 0 0 0 0 0 0 0 0)
@@ -343,16 +343,16 @@ eaterBoundB
 			#(0 0 0 0 0 0 0 0 0 1 1 1)
 			#(0 0 0 0 0 0 0 0 0 0 0 1)
 			)
-		#(354 290) 	"extent := #(ver hor) for morph"
-		)! !
+		'290@360' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:12'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 13:06'!
 engine
 	"Switch engine, period 96"
 	
 	^ #(
-		#(80 80)	"grid size := #(rows columns)"
-		#(57 50) 	"position := #(x y) to load pattern"
+		'80@80'	"grid size rows@columns"
+		'57@50' 	"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
@@ -363,16 +363,16 @@ engine
 			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
 			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
 			)
-		#(924 712) 	"extent := #(ver hor) for morph"
-		)! !
+		'710@920' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:20'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 11:06'!
 flipflopA
 	"Flipflop A"
 	
 	^ #(
-		#(9 8)		"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'9@8'		"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 1 0 0 0)
@@ -384,16 +384,16 @@ flipflopA
 			#(0 0 0 1 0 1 0 0)
 			#(0 0 0 1 0 0 0 0)
 			)
-		#(252 207) 	"extent := #(ver hor) for morph"
-		)! !
+		'252@300' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:44'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:07'!
 flipflopB
 	"Flipflop B"
 	
 	^ #(
-		#(10 6)	"grid size := #(rows columns)"
-		#(2 1) 	"position := #(x y) to load pattern"
+		'10@6'	"grid size rows@columns"
+		'2@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 1 1 1 0 0)
@@ -404,16 +404,16 @@ flipflopB
 			#(0 0 0 0 0 0)
 			#(0 0 1 1 1 0)
 			)
-		#(289 175) 	"extent := #(ver hor) for morph"
-		)! !
+		'180@300' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:15'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 11:12'!
 flipflopC
 	"Flipflop C"
 	
 	^ #(
-		#(9 7)		"grid size := #(rows columns)"
-		#(2 1) 	"position := #(x y) to load pattern"
+		'9@7'	"grid size rows@columns"
+		'2@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 1 1 1)
@@ -424,16 +424,16 @@ flipflopC
 			#(0 1 0 0 0 0 0)
 			#(0 1 1 0 0 0 0)
 			)
-		#(275 211) 	"extent := #(ver hor) for morph"
-		)! !
+		'200@300' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:25'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 11:14'!
 flipflopD
 	"Flipflop D"
 	
 	^ #(
-		#(8 6)		"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'8@6'		"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 1 0 0 0)
@@ -444,32 +444,32 @@ flipflopD
 			#(0 0 1 0 1 0)
 			#(0 0 1 0 0 0)
 			)
-		#(288 205) 	"extent := #(ver hor) for morph"
-		)! !
+		'200@300' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:43'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:49'!
 glider
 	"Glider"
 	
 	^ #(
-		#(15 14)	"grid size := #(rows columns)"
-		#(12 2) 	"position := #(x y) to load pattern"
+		'15@14'	"grid size rows@columns"
+		'12@2' 	"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(1 1 1)
 			#(0 0 1)
 			#(0 1 0)
 			)
-		#(377 316) 	"extent := #(ver hor) for morph"
-		)! !
+		'310@380' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:00'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 13:02'!
 gliderGun
 	"Glider gun, period 30"
 	
 	^ #(
-		#(27 40)	"grid size := #(rows columns)"
-		#(18 2) 	"position := #(x y) to load pattern"
+		'27@40'	"grid size rows@columns"
+		'18@2' 	"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
@@ -482,32 +482,32 @@ gliderGun
 			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0)
 			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0)
 			)
-		#(450 542) 	"extent := #(ver hor) for morph"
-		)! !
+		'540@450' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:19'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:13'!
 hiveEater
 	"Block devours beehive"
 	
 	^ #(
-		#(6 7)		"grid size := #(rows columns)"
-		#(2 1) 	"position := #(x y) to load pattern"
+		'6@7'		"grid size rows@columns"
+		'2@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 1 1 0)
 			#(1 1 0 1 0 0 1)
 			#(1 1 0 0 1 1 0)
 			)
-		#(230 235) 	"extent := #(ver hor) for morph"
-		)! !
+		'260@250' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:35'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:27'!
 mazing
 	"Mazing, a period 4 pulsator"
 	
 	^ #(
-		#(10 9)		"grid size := #(rows columns)"
-		#(2 2) 		"position := #(x y) to load pattern"
+		'10@9'		"grid size rows@columns"
+		'2@2' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 1 0 0 0 0)
@@ -518,8 +518,8 @@ mazing
 			#(0 0 0 1 0 1 0)
 			#(0 0 1 1 0 0 0)
 			)
-		#(303 254) 	"extent := #(ver hor) for morph"
-		)! !
+		'250@300' 	"extent hor@ver for morph"
+		) evalStrings! !
 
 !LifeModel class methodsFor: 'database' stamp: 'dhn 7/2/2016 10:23'!
 menuLines
@@ -545,13 +545,13 @@ menuLines
 	
 	^ ln! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:38'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:31'!
 mitOsc
 	"MIT Oscillator, a period 3 object"
 	
 	^ #(
-		#(9 9)		"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'9@9'		"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 1 1 0 0 0 0)
@@ -563,16 +563,16 @@ mitOsc
 			#(0 1 0 0 0 0 0 0 0)
 			#(1 1 0 0 0 0 0 0 0)
 			)
-		#(264 243) 	"extent := #(ver hor) for morph"
-		)! !
+		'240@260' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:04'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 13:04'!
 newGun
 	"Period 46 glider gun"
 	
 	^ #(
-		#(40 40)	"grid size := #(rows columns)"
-		#(4 7) 	"position := #(x y) to load pattern"
+		'40@40'	"grid size rows@columns"
+		'4@7' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
@@ -611,8 +611,8 @@ newGun
 			#(1 1 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
 			#(1 1 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
 			)
-		#(700 586) 	"extent := #(ver hor) for morph"
-		)! !
+		'590@700' 	"extent hor@ver for morph"
+		) evalStrings! !
 
 !LifeModel class methodsFor: 'database' stamp: 'dhn 7/2/2016 15:05'!
 patternNames
@@ -659,29 +659,29 @@ patternNames
 		('Switch Engine' 			#engine)
 	)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:32'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:24'!
 pentadec
 	"The pentadecathlon pulsar"
 	
 	^ #(
-		#(10 18)		"grid size := #(rows columns)"
-		#(4 5) 	"position := #(x y) to load pattern"
+		'10@18'	"grid size rows@columns"
+		'4@5' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 1 0 0 0 0 1 0 0)
 			#(1 1 0 1 1 1 1 0 1 1)
 			#(0 0 1 0 0 0 0 1 0 0)
 			)
-		#(266 349) 	"extent := #(ver hor) for morph"
-		)! !
+		'350@260' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 16:36'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 11:18'!
 period2
 	"Period 2 Oscillator"
 	
 	^ #(
-		#(15 14)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'15@14'	"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 1 1 0 0 0 0 0 0 0 0)
@@ -699,16 +699,16 @@ period2
 			#(0 0 0 0 0 0 0 0 1 0 0 0 0 0)
 			#(0 0 0 0 0 0 0 0 1 1 0 0 0 0)
 			)
-		#(380 350) 	"extent := #(ver hor) for morph"
-		)! !
+		'340@360' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:25'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:15'!
 period3
 	"Period 3 eater"
 	
 	^ #(
-		#(8 8)		"grid size := #(rows columns)"
-		#(1 2) 	"position := #(x y) to load pattern"
+		'8@8'		"grid size rows@columns"
+		'1@2' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 0 1 1)
@@ -719,16 +719,16 @@ period3
 			#(0 1 0 0 0 0 0)
 			#(1 1 0 0 0 0 0)
 			)
-		#(279 261) 	"extent := #(ver hor) for morph"
-		)! !
+		'252@300' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:54'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:58'!
 period52
 	"Period 52 eater"
 	
 	^ #(
-		#(19 21)	"grid size := #(rows columns)"
-		#(2 2) 	"position := #(x y) to load pattern"
+		'19@21'	"grid size rows@columns"
+		'2@2' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0)
@@ -749,16 +749,16 @@ period52
 			#(0 0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0)
 			#(0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
 			)
-		#(380 350) 	"extent := #(ver hor) for morph"
-		)! !
+		'350@380' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:27'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 11:22'!
 period6
 	"Period 6 eater"
 	
 	^ #(
-		#(11 9)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'11@9'	"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 1 0 0 0 0)
@@ -772,16 +772,16 @@ period6
 			#(0 0 0 0 0 0 0 1 1)
 			#(0 0 0 0 0 0 0 1 1)
 			)
-		#(319 259) 	"extent := #(ver hor) for morph"
-		)! !
+		'260@320' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:57'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 13:00'!
 period6O
 	"Period 6 oscillator"
 	
 	^ #(
-		#(23 19)	"grid size := #(rows columns)"
-		#(2 2) 	"position := #(x y) to load pattern"
+		'23@19'	"grid size rows@columns"
+		'2@2' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0)
@@ -806,16 +806,16 @@ period6O
 			#(0 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0)
 			#(0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0)
 			)
-		#(528 366) 	"extent := #(ver hor) for morph"
-		)! !
+		'370@530' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:42'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:18'!
 pulsar
 	"Pulsar, a period 3 inductor"
 	
 	^ #(
-		#(16 15)	"grid size := #(rows columns)"
-		#(2 1) 	"position := #(x y) to load pattern"
+		'16@15'	"grid size rows@columns"
+		'2@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 1 1 1 0 0 0 1 1 1 0 0 0)
@@ -832,16 +832,16 @@ pulsar
 			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
 			#(0 0 0 1 1 1 0 0 0 1 1 1 0 0 0)
 			)
-		#(380 350) 	"extent := #(ver hor) for morph"
-		)! !
+		'350@380' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:41'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:52'!
 space1
 	"Lightweight Spaceship"
 	
 	^ #(
-		#(6 40)	"grid size := #(rows columns)"
-		#(2 2) 	"position := #(x y) to load pattern"
+		'6@40'	"grid size rows@columns"
+		'2@2' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 1 1 1 1)
@@ -849,16 +849,16 @@ space1
 			#(0 0 0 0 1)
 			#(1 0 0 1 0)
 			)
-		#(164 705) 	"extent := #(ver hor) for morph"
-		)! !
+		'700@160' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:49'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:54'!
 space2
 	"Middleweight Spaceship"
 	
 	^ #(
-		#(7 40)	"grid size := #(rows columns)"
-		#(2 2) 	"position := #(x y) to load pattern"
+		'7@40'	"grid size rows@columns"
+		'2@2' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 1 1 1 1 1)
@@ -867,16 +867,16 @@ space2
 			#(1 0 0 0 1 0)
 			#(0 0 1 0 0 0)
 			)
-		#(228 946) 	"extent := #(ver hor) for morph"
-		)! !
+		'950@230' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:51'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:55'!
 space3
 	"Heavyweight Spaceship"
 	
 	^ #(
-		#(7 40)		"grid size := #(rows columns)"
-		#(2 2) 	"position := #(x y) to load pattern"
+		'7@40'	"grid size rows@columns"
+		'2@2' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 1 1 1 1 1 1)
@@ -885,16 +885,16 @@ space3
 			#(1 0 0 0 0 1 0)
 			#(0 0 1 1 0 0 0)
 			)
-		#(186 727) 	"extent := #(ver hor) for morph"
-		)! !
+		'730@190' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:06'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 10:26'!
 toad
 	"Toad"
 	
 	^ #(
-		#(5 6)		"grid size := #(rows columns)"
-		#(1 2) 	"position := #(x y) to load pattern"
+		'5@6'		"grid size rows@columns"
+		'1@2' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 1 1 0)
@@ -902,16 +902,16 @@ toad
 			#(0 0 0 1)
 			#(0 1 1 0)
 			)
-		#(182 192) 	"extent := #(ver hor) for morph"
-		)! !
+		'182@192' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:18'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 11:02'!
 tripole
 	"Tripole"
 	
 	^ #(
-		#(7 6)		"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'7@6'		"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(1 1 0 0 0 0)
@@ -921,16 +921,16 @@ tripole
 			#(0 0 0 0 0 1)
 			#(0 0 0 0 1 1)
 			)
-		#(203 160) 	"extent := #(ver hor) for morph"
-		)! !
+		'200@230' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:40'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:20'!
 tumbler
 	"Tumbler, a period 14 inductor"
 	
 	^ #(
-		#(9 9)		"grid size := #(rows columns)"
-		#(2 1) 	"position := #(x y) to load pattern"
+		'9@9'		"grid size rows@columns"
+		'2@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 1 1 0 1 1 0 0)
@@ -940,16 +940,16 @@ tumbler
 			#(0 1 0 1 0 1 0 1 0)
 			#(0 1 1 0 0 0 1 1 0)
 			)
-		#(267 264) 	"extent := #(ver hor) for morph"
-		)! !
+		'260@260' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:38'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:44'!
 twinBees
 	"Twin Bees Shuttle"
 	
 	^ #(
-		#(14 29)	"grid size := #(rows columns)"
-		#(2 1) 	"position := #(x y) to load pattern"
+		'14@29'	"grid size rows@columns"
+		'2@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
@@ -964,16 +964,16 @@ twinBees
 			#(1 1 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
 			#(0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
 			)
-		#(380 615) 	"extent := #(ver hor) for morph"
-		)! !
+		'610@380' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:38'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:31'!
 unix
 	"Unix, a period 6 pulsator"
 	
 	^ #(
-		#(10 10)	"grid size := #(rows columns)"
-		#(1 2) 	"position := #(x y) to load pattern"
+		'10@10'	"grid size rows@columns"
+		'1@2' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 1 1 0 0 0 0 0)
@@ -985,16 +985,16 @@ unix
 			#(0 0 0 0 1 0 1 1)
 			#(0 0 1 1 0 0 0 0)
 			)
-		#(263 237) 	"extent := #(ver hor) for morph"
-		)! !
+		'240@260' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:33'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:22'!
 unnamed1
 	"Unnamed period 8 inductor"
 	
 	^ #(
-		#(13 21)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'13@21'	"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0)
@@ -1010,16 +1010,16 @@ unnamed1
 			#(0 0 0 0 1 1 1 0 0 0 0 0 0 0 1 1 1 0 0 0 0)
 			#(0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0)
 			)
-		#(309 373) 	"extent := #(ver hor) for morph"
-		)! !
+		'370@300' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:07'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:34'!
 unnamed2
 	"Unnamed period 8 object"
 	
 	^ #(
-		#(13 15)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'13@15'	"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 1 1 0 0 0 1 1 0 0 0 0)
@@ -1035,16 +1035,16 @@ unnamed2
 			#(0 0 0 0 1 1 1 0 0 0 0 0 1 1 0)
 			#(0 0 0 0 0 0 1 0 0 0 0 0 0 0 0)
 			)
-		#(380 350) 	"extent := #(ver hor) for morph"
-		)! !
+		'350@380' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:42'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:39'!
 unnamed3
 	"Unnamed period 5 oscillator"
 	
 	^ #(
-		#(16 13)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'16@13'	"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 0 0 0 0 0 1 1 0 0)
@@ -1063,16 +1063,16 @@ unnamed3
 			#(0 0 0 0 0 0 0 0 1 0 1 0 0)
 			#(0 0 0 0 0 0 0 0 0 1 1 0 0)
 			)
-		#(380 310) 	"extent := #(ver hor) for morph"
-		)! !
+		'310@380' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:08'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:41'!
 unnamed4
 	"Unnamed period 9 object"
 	
 	^ #(
-		#(15 14)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'15@14'	"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 0 0 0 0 0 0 1 1 0 0)
@@ -1090,16 +1090,16 @@ unnamed4
 			#(0 0 0 1 1 0 0 0 0 0 0 0 0 0)
 			#(0 0 0 1 1 0 0 0 0 0 0 0 0 0)
 			)
-		#(380 350) 	"extent := #(ver hor) for morph"
-		)! !
+		'350@380' 	"extent hor@ver for morph"
+		) evalStrings! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:41'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:37'!
 wavefront
 	"Wavefront, a period 4 object"
 	
 	^ #(
-		#(14 13)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		'14@13'	"grid size rows@columns"
+		'1@1' 		"position x@y to load pattern"
 		
 		#(	"the pattern"
 			#(0 0 0 0 0 0 0 0 1 1 0 0 0)
@@ -1116,8 +1116,8 @@ wavefront
 			#(0 0 0 0 1 0 1 0 0 0 0 0 0)
 			#(0 0 0 0 0 1 0 0 0 0 0 0 0)
 			)
-		#(380 322) 	"extent := #(ver hor) for morph"
-		)! !
+		'320@380' 	"extent hor@ver for morph"
+		) evalStrings! !
 
 !LifeArray methodsFor: 'accessing' stamp: 'dhn 7/6/2016 15:41'!
 at: aPoint
@@ -1224,22 +1224,19 @@ buildMorphicWindow
 	model when: #stateChanged send: #stateChanged to: self.
 	model when: #period send: #updateTitle to: self! !
 
-!LifeView methodsFor: 'menu' stamp: 'dhn 7/4/2016 15:59'!
+!LifeView methodsFor: 'menu' stamp: 'dhn 7/7/2016 12:01'!
 experiment
 	"Open a clean sheet at a scale and extent"
-	 | xy grid jk ext |
+	 | xy grid jk |
 	
-	xy _ FillInTheBlankMorph request: 'Grid dimensions (h x w)?' initialAnswer: '30x40'.
-	xy ifNotEmpty: [ | inp |
-		inp _ xy findTokens: 'x' keep: ($0 to: $9).
-		grid _ {inp first asNumber. inp second asNumber}.
-		jk _ FillInTheBlankMorph request: 'Window extent (h x w)?' initialAnswer: '500x700'.
+	xy _ FillInTheBlankMorph request: 'Grid dimensions (h@w)?' initialAnswer: '30@40'.
+	xy ifNotEmpty: [ 
+		grid _ {xy} evalStrings.
+		jk _ FillInTheBlankMorph request: 'Window extent (w@h)?' initialAnswer: '600@500'.
 		jk 
-			ifNotEmpty: [ | dat win |
-				dat _ jk findTokens: 'x' keep: ($0 to: $9).
-				ext _ {dat second asNumber. dat first asNumber}.
-				win _ self class rows: grid first cols: grid second.
-				win extentAndPosition: (Point x: ext first y: ext second).
+			ifNotEmpty: [ | win |
+				win _ self class rows: grid first x cols: grid first y.
+				win extentAndPosition: {jk} evalStrings first.
 				win setLabel: 'Experiment'.
 				win label: 'Experiment'.
 				]
@@ -1281,10 +1278,10 @@ lines: anObject
 	
 	lines _ anObject! !
 
-!LifeView methodsFor: 'menu' stamp: 'dhn 7/4/2016 16:00'!
+!LifeView methodsFor: 'menu' stamp: 'dhn 7/7/2016 10:13'!
 loadPattern
 	"Load a life form selected from a menu"
-	| items n arr siz nww ext |
+	| items n arr siz nww |
 	
 	items _ String streamContents: [:s | 
 		model class patternNames do: [:i | s nextPutAll: i first asString; newLine]].
@@ -1294,12 +1291,11 @@ loadPattern
 
 		"spawn another version of the view, then delete this one"
 		siz _ arr first. "size of the next view"
-		nww _ self class rows: siz first cols: siz second. "open the next view"
+		nww _ self class rows: siz x cols: siz y. "open the next view"
 		nww model set: arr third at: arr second. 	"load the chosen life form into the next view"
 		nww label: (model class patternNames at: n) first.
 		nww setLabel: nww label.
-		ext _ arr fourth.
-		nww extentAndPosition: (Point x: ext second y: ext first).
+		nww extentAndPosition: arr fourth.
 		self delete "delete old view"]! !
 
 !LifeView methodsFor: 'menu' stamp: 'dhn 7/2/2016 11:47'!
