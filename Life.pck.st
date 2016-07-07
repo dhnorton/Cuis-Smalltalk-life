@@ -1,6 +1,9 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2829] on 4 July 2016 at 4:08:43.945706 pm'!
-'Description Please enter a description for this package'!
-!provides: 'Life' 1 65!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2829] on 6 July 2016 at 10:09:29.665138 pm'!
+'Description The game of Life, an example of a cellular automaton, developed by Prof. John H. Conway at the University of Cambridge.
+
+Gardner, Martin, "Mathematical Games", Scientific American, October 1970, February 1971
+"Some Facts of Life", Byte Magazine, December 1978'!
+!provides: 'Life' 1 0!
 !classDefinition: #LifeModel category: #Life!
 TextModel subclass: #LifeModel
 	instanceVariableNames: 'shape cells cellIndex'
@@ -11,9 +14,19 @@ TextModel subclass: #LifeModel
 LifeModel class
 	instanceVariableNames: ''!
 
+!classDefinition: #LifeArray category: #Life!
+Array2D subclass: #LifeArray
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Life'!
+!classDefinition: 'LifeArray class' category: #Life!
+LifeArray class
+	instanceVariableNames: ''!
+
 !classDefinition: #GridCell category: #Life!
 PluggableButtonMorph subclass: #GridCell
-	instanceVariableNames: 'index offColor onColor state'
+	instanceVariableNames: 'index offColor onColor'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Life'!
@@ -23,7 +36,7 @@ GridCell class
 
 !classDefinition: #LifeView category: #Life!
 SystemWindow subclass: #LifeView
-	instanceVariableNames: 'runFlag stepDelay lines label periodN'
+	instanceVariableNames: 'runFlag stepDelay lines label periodN gridArray'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Life'!
@@ -34,6 +47,11 @@ LifeView class
 
 !LifeModel commentStamp: 'dhn 6/25/2016 13:43' prior: 0!
 A model for the game of Life, a two-dimensional cellular automaton.!
+
+!LifeArray commentStamp: 'dhn 7/6/2016 15:24' prior: 0!
+Avoid mental gymnastics while using Array2D, which uses backward coordinates.
+
+Give access to #elements iVar.!
 
 !GridCell commentStamp: 'dhn 6/25/2016 14:53' prior: 0!
 A cell in the game of Life.!
@@ -67,61 +85,55 @@ cells: anObject
 	
 	cells _ anObject! !
 
-!LifeModel methodsFor: 'accessing' stamp: 'dhn 6/26/2016 11:57'!
+!LifeModel methodsFor: 'accessing' stamp: 'dhn 7/6/2016 16:00'!
 clearGrid
-	"Set the state of all cells to false"
+	"Set the state of all cells to 0"
 	
-	cells do: [:ea | ea state: 0]! !
+	(1 to: cells elements size) do: [:i | cells elements at: i put: 0].
+	self triggerEvent: #stateChanged! !
 
-!LifeModel methodsFor: 'initialization' stamp: 'dhn 6/26/2016 08:32'!
-initialize
-
-	cells _ OrderedCollection new! !
-
-!LifeModel methodsFor: 'operation' stamp: 'dhn 7/1/2016 21:55'!
+!LifeModel methodsFor: 'operation' stamp: 'dhn 7/6/2016 17:58'!
 nextState
 	"Determine the next state of the cells"
 	| future env sum |
 	
-	future _ OrderedCollection new.
-	cells do: [:ea | | venv |
-		env _ self surrounding: ea index.
-		venv _ env collect: [:p | self vectorIndex: p].
-		sum _ 0.
-		venv do: [:c | sum _ sum + (cells at: c) state].
-		ea state = 1
-			ifTrue: [
-				(sum = 2 or: [sum = 3]) 
-					ifTrue: [future add: 1]
-					ifFalse: [future add: 0]]
-			ifFalse: [
-				sum = 3
-					ifTrue: [future add: 1]
-					ifFalse: [future add: 0]]].
-			
-	(1 to: cells size) do: [:n | (cells at: n) state: (future at: n)].
+	future _ cells copy.
+	(1 to: cells height) do: [:row |
+		(1 to: cells width) do: [:col | | pt |
+			pt _ Point x: row y: col.
+			env _ self surrounding:  pt.
+			sum _ 0.
+			env do: [:c | sum _ sum + (cells at: c)].
+			(cells at: pt) = 1
+				ifTrue: [
+					(sum = 2 or: [sum = 3]) 
+						ifTrue: [future at: pt put: 1]
+						ifFalse: [future at: pt put: 0]]
+				ifFalse: [
+					sum = 3
+						ifTrue: [future at: pt put: 1]
+						ifFalse: [future at: pt put: 0]]]].
+	
+	cells elements: future elements.		
+	self triggerEvent: #stateChanged.
 	self triggerEvent: #period! !
 
-!LifeModel methodsFor: 'initialization' stamp: 'dhn 7/1/2016 08:27'!
+!LifeModel methodsFor: 'initialization' stamp: 'dhn 7/6/2016 20:28'!
 set: pattern at: coords
 	"Load pattern into cells, starting at: coords, specifying the upper left cell location"
 	"A pattern should be a collection of rows of equal length which are used to set initial state"
-	| ndx right left patV patN n |
+	| arr left depth |
 	
-	ndx _ self vectorIndex: (Point x: coords first y: coords second).
+	arr _ LifeArray height: pattern size width: pattern first size.
+	arr fillWithArrayOfArrays: pattern.
 	left _ coords second - 1 min: 0.
-	right _ shape y - left - pattern first size min: 0.
-	patV _ OrderedCollection new.
-	pattern do: [:row | 
-		row do: [:st | patV add: st].
-		(right + left) timesRepeat: [patV add: 0]].
-	patN _ patV copyFrom: 1 to: patV size - (right + left).
-	(ndx + patN size) < cells size
+	depth _ (coords first - 1 min: 0) + arr height.
+	(cells width >= (left + arr width) and: [cells height >= depth]) 
 		ifTrue: [
-			n _ 0.
-			patN do: [:ea | 
-				(cells at: ndx + n) state: (patN at: n + 1).
-				n _ n + 1]]
+			(0 to: (arr height - 1)) do: [:row | 
+				(0 to: (arr width - 1)) do: [:col | 
+					cells i: row + coords first j: col + coords second put: (arr i: row + 1 j: col + 1)]].
+			self triggerEvent: #stateChanged]
 		ifFalse: [nil inform: 'Life form too big for grid or 
 not located high enough.']
 ! !
@@ -132,11 +144,13 @@ shape
 	
 	^ shape! !
 
-!LifeModel methodsFor: 'initialization' stamp: 'dhn 6/26/2016 11:47'!
+!LifeModel methodsFor: 'initialization' stamp: 'dhn 7/6/2016 15:53'!
 shape: aPoint
 	"Set the number of rows and columns of the grid"
 	
-	shape _ aPoint! !
+	shape _ aPoint.
+	cells _ LifeArray height: aPoint x width: aPoint y.
+	self clearGrid! !
 
 !LifeModel methodsFor: 'operation' stamp: 'dhn 6/26/2016 08:52'!
 surrounding: aPoint
@@ -159,12 +173,6 @@ surrounding: aPoint
 	^ sur select: [:p | p y <= shape y and: [p y > 0]]
 ! !
 
-!LifeModel methodsFor: 'operation' stamp: 'dhn 7/1/2016 08:27'!
-vectorIndex: aPoint
-	"Transform aPoint into the index of the cell in a vector"
-	
-	^ aPoint x - 1 * shape y +  aPoint y! !
-
 !LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:44'!
 basic
 	"Basic Shuttle"
@@ -185,19 +193,19 @@ basic
 		#(250 502) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 16:30'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:01'!
 beacon
 	"Beacon"
 	
 	^ #(
 		#(5 6)		"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(1 2) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 1 1 0 0 0)
-			#(0 1 0 0 0 0)
-			#(0 0 0 0 1 0)
-			#(0 0 0 1 1 0)
+			#(1 1 0 0)
+			#(1 0 0 0)
+			#(0 0 0 1)
+			#(0 0 1 1)
 			)
 		#(182 192) 	"extent := #(ver hor) for morph"
 		)
@@ -244,35 +252,33 @@ bipole
 		#(216 160) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 16:27'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 19:50'!
 blinker
 	"Blinker"
 	
 	^ #(
 		#(4 5)		"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(2 2) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0)
-			#(0 1 1 1 0)
-			#(0 0 0 0 0)
+			#(1 1 1)
 			)
 		#(150 160) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 16:31'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:04'!
 clock
 	"Clock"
 	
 	^ #(
 		#(5 6)		"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(1 2) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 1 0 0)
-			#(0 1 0 1 0 0)
-			#(0 0 1 0 1 0)
-			#(0 0 1 0 0 0)
+			#(0 0 1 0)
+			#(1 0 1 0)
+			#(0 1 0 1)
+			#(0 1 0 0)
 			)
 		#(182 192) 	"extent := #(ver hor) for morph"
 		)
@@ -340,22 +346,22 @@ eaterBoundB
 		#(354 290) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:58'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:12'!
 engine
 	"Switch engine, period 96"
 	
 	^ #(
 		#(80 80)	"grid size := #(rows columns)"
-		#(57 1) 	"position := #(x y) to load pattern"
+		#(57 50) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 )
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 )
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 )
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 )
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 )
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 )
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 )
+			#(0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
 			)
 		#(924 712) 	"extent := #(ver hor) for morph"
 		)! !
@@ -381,16 +387,15 @@ flipflopA
 		#(252 207) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:22'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:44'!
 flipflopB
 	"Flipflop B"
 	
 	^ #(
 		#(10 6)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(2 1) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0)
 			#(0 1 1 1 0 0)
 			#(0 0 0 0 0 0)
 			#(1 1 0 0 1 0)
@@ -402,16 +407,15 @@ flipflopB
 		#(289 175) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:24'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:15'!
 flipflopC
 	"Flipflop C"
 	
 	^ #(
 		#(9 7)		"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(2 1) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 0)
 			#(0 0 0 0 1 1 1)
 			#(1 1 0 0 0 0 0)
 			#(1 0 1 0 1 1 0)
@@ -443,55 +447,53 @@ flipflopD
 		#(288 205) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:49'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:43'!
 glider
 	"Glider"
 	
 	^ #(
 		#(15 14)	"grid size := #(rows columns)"
-		#(12 1) 	"position := #(x y) to load pattern"
+		#(12 2) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 1 1 1 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 1 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 1 0 0 0 0 0 0 0 0 0 0 0)
+			#(1 1 1)
+			#(0 0 1)
+			#(0 1 0)
 			)
 		#(377 316) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:56'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:00'!
 gliderGun
 	"Glider gun, period 30"
 	
 	^ #(
 		#(27 40)	"grid size := #(rows columns)"
-		#(17 1) 	"position := #(x y) to load pattern"
+		#(18 2) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 1 1 1 1 1 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 1 1 0 0 0 0 0 1 1 1 0 0 0 0 0 1 0 0 1 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 1 1 0 0 0 0 0 0 1 1 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 1 1 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 1 1 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 1 1 1 1 1 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(1 1 0 0 0 0 0 1 1 1 0 0 0 0 0 1 0 0 1 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0)
+			#(1 1 0 0 0 0 0 0 1 1 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 1 1)
+			#(0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 1 1)
+			#(0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0)
 			)
 		#(450 542) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:29'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:19'!
 hiveEater
 	"Block devours beehive"
 	
 	^ #(
 		#(6 7)		"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(2 1) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 0)
 			#(0 0 0 0 1 1 0)
 			#(1 1 0 1 0 0 1)
 			#(1 1 0 0 1 1 0)
@@ -499,23 +501,22 @@ hiveEater
 		#(230 235) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:36'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:35'!
 mazing
 	"Mazing, a period 4 pulsator"
 	
 	^ #(
 		#(10 9)		"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(2 2) 		"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 0 0 0)
-			#(0 0 0 1 0 0 0 0 0)
-			#(0 0 1 0 1 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0)
-			#(0 1 1 0 0 0 1 0 0)
-			#(0 1 0 0 0 0 0 1 0)
-			#(0 0 0 0 1 0 1 0 0)
-			#(0 0 0 1 1 0 0 0 0)
+			#(0 0 1 0 0 0 0)
+			#(0 1 0 1 0 0 0)
+			#(0 0 0 0 0 0 0)
+			#(1 1 0 0 0 1 0)
+			#(1 0 0 0 0 0 1)
+			#(0 0 0 1 0 1 0)
+			#(0 0 1 1 0 0 0)
 			)
 		#(303 254) 	"extent := #(ver hor) for morph"
 		)! !
@@ -565,53 +566,50 @@ mitOsc
 		#(264 243) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:57'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:04'!
 newGun
 	"Period 46 glider gun"
 	
 	^ #(
 		#(40 40)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(4 7) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
-			#(0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 1 1 1 0 0 0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 1 0 0 1 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 1 1 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 1 1 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 1 1 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
+			#(0 0 0 0 0 1 1 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(1 1 1 0 0 0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(1 0 0 1 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 1 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 1 1 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(1 1 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(1 1 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
 			)
 		#(700 586) 	"extent := #(ver hor) for morph"
 		)! !
@@ -661,18 +659,18 @@ patternNames
 		('Switch Engine' 			#engine)
 	)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:34'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:32'!
 pentadec
 	"The pentadecathlon pulsar"
 	
 	^ #(
 		#(10 18)		"grid size := #(rows columns)"
-		#(4 1) 	"position := #(x y) to load pattern"
+		#(4 5) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0)
-			#(0 0 0 0 1 1 0 1 1 1 1 0 1 1 0 0 0 0)
-			#(0 0 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0)
+			#(0 0 1 0 0 0 0 1 0 0)
+			#(1 1 0 1 1 1 1 0 1 1)
+			#(0 0 1 0 0 0 0 1 0 0)
 			)
 		#(266 349) 	"extent := #(ver hor) for morph"
 		)! !
@@ -704,53 +702,52 @@ period2
 		#(380 350) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:30'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:25'!
 period3
 	"Period 3 eater"
 	
 	^ #(
 		#(8 8)		"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(1 2) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 1 1)
-			#(0 0 0 0 0 0 1 1)
-			#(0 0 0 0 0 0 1 1)
-			#(0 0 0 1 1 0 0 0)
-			#(0 0 1 0 1 0 0 0)
-			#(0 0 1 0 0 0 0 0)
-			#(0 1 1 0 0 0 0 0)
+			#(0 0 0 0 0 1 1)
+			#(0 0 0 0 0 1 1)
+			#(0 0 0 0 0 1 1)
+			#(0 0 1 1 0 0 0)
+			#(0 1 0 1 0 0 0)
+			#(0 1 0 0 0 0 0)
+			#(1 1 0 0 0 0 0)
 			)
 		#(279 261) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:11'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:54'!
 period52
 	"Period 52 eater"
 	
 	^ #(
 		#(19 21)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(2 2) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 0 0 0 0 0)
-			#(0 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0)
-			#(0 0 1 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0)
-			#(0 0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 1 0 1 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 1 1 0 0 0 1 1 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0 0)
-			#(0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0)
-			#(0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1 1 0 0 0)
-			#(0 0 0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 0 0)
+			#(1 1 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0)
+			#(0 1 0 0 0 0 0 0 0 0 0 1 1 0 0 0 0)
+			#(0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 1 0 1 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 1 1 0 0 0 1 1 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 1 0)
+			#(0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 1 0)
+			#(0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 1 1)
+			#(0 0 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
 			)
 		#(380 350) 	"extent := #(ver hor) for morph"
 		)! !
@@ -778,51 +775,49 @@ period6
 		#(319 259) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:55'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:57'!
 period6O
 	"Period 6 oscillator"
 	
 	^ #(
 		#(23 19)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(2 2) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0 0 0)
-			#(0 0 0 0 1 1 0 0 0 0 1 1 0 1 1 1 0 0 0)
-			#(0 0 0 0 1 0 1 0 0 0 0 0 0 0 0 0 1 0 0)
-			#(0 0 0 0 0 0 1 0 0 0 1 1 0 1 1 1 0 0 0)
-			#(0 0 0 0 0 0 1 1 0 0 1 1 0 1 0 0 0 0 0)
-			#(0 0 0 0 1 1 0 0 1 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 1 0 1 1 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 1 0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 1 0 1 1 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 1 1 0 0 1 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 1 1 0 0 1 1 0 1 0 0 0 0 0)
-			#(0 0 0 0 0 0 1 0 0 0 1 1 0 1 1 1 0 0 0)
-			#(0 0 0 0 1 0 1 0 0 0 0 0 0 0 0 0 1 0 0)
-			#(0 0 0 0 1 1 0 0 0 0 1 1 0 1 1 1 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0)
+			#(0 0 0 1 1 0 0 0 0 1 1 0 1 1 1 0)
+			#(0 0 0 1 0 1 0 0 0 0 0 0 0 0 0 1)
+			#(0 0 0 0 0 1 0 0 0 1 1 0 1 1 1 0)
+			#(0 0 0 0 0 1 1 0 0 1 1 0 1 0 0 0)
+			#(0 0 0 1 1 0 0 1 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 1 0 1 1 0 0 0 0 0 0 0 0)
+			#(0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 0)
+			#(1 0 1 0 1 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 1 0 1 1 0 0 0 0 0 0 0 0)
+			#(0 0 0 1 1 0 0 1 0 0 0 0 0 0 0 0)
+			#(0 0 0 0 0 1 1 0 0 1 1 0 1 0 0 0)
+			#(0 0 0 0 0 1 0 0 0 1 1 0 1 1 1 0)
+			#(0 0 0 1 0 1 0 0 0 0 0 0 0 0 0 1)
+			#(0 0 0 1 1 0 0 0 0 1 1 0 1 1 1 0)
+			#(0 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 1 0 1 0 0 0)
+			#(0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0)
 			)
 		#(528 366) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 16:39'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:42'!
 pulsar
 	"Pulsar, a period 3 inductor"
 	
 	^ #(
 		#(16 15)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(2 1) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
 			#(0 0 0 1 1 1 0 0 0 1 1 1 0 0 0)
 			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
 			#(0 1 0 0 0 0 1 0 1 0 0 0 0 1 0)
@@ -840,75 +835,72 @@ pulsar
 		#(380 350) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:51'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:41'!
 space1
 	"Lightweight Spaceship"
 	
 	^ #(
 		#(6 40)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(2 2) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 1 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 1 1 1 1)
+			#(1 0 0 0 1)
+			#(0 0 0 0 1)
+			#(1 0 0 1 0)
 			)
 		#(164 705) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:52'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:49'!
 space2
 	"Middleweight Spaceship"
 	
 	^ #(
 		#(7 40)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(2 2) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 1 1 1 1 1)
+			#(1 0 0 0 0 1)
+			#(0 0 0 0 0 1)
+			#(1 0 0 0 1 0)
+			#(0 0 1 0 0 0)
 			)
 		#(228 946) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:53'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:51'!
 space3
 	"Heavyweight Spaceship"
 	
 	^ #(
 		#(7 40)		"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(2 2) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 1 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
-			#(0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
+			#(0 1 1 1 1 1 1)
+			#(1 0 0 0 0 0 1)
+			#(0 0 0 0 0 0 1)
+			#(1 0 0 0 0 1 0)
+			#(0 0 1 1 0 0 0)
 			)
 		#(186 727) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 16:31'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:06'!
 toad
 	"Toad"
 	
 	^ #(
 		#(5 6)		"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(1 2) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 1 1 0 0)
-			#(0 1 0 0 0 0)
-			#(0 0 0 0 1 0)
-			#(0 0 1 1 0 0)
+			#(0 1 1 0)
+			#(1 0 0 0)
+			#(0 0 0 1)
+			#(0 1 1 0)
 			)
 		#(182 192) 	"extent := #(ver hor) for morph"
 		)! !
@@ -932,16 +924,15 @@ tripole
 		#(203 160) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:32'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:40'!
 tumbler
 	"Tumbler, a period 14 inductor"
 	
 	^ #(
 		#(9 9)		"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(2 1) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 0 0 0)
 			#(0 0 1 1 0 1 1 0 0)
 			#(0 0 1 1 0 1 1 0 0)
 			#(0 0 0 1 0 1 0 0 0)
@@ -952,16 +943,15 @@ tumbler
 		#(267 264) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:46'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 21:38'!
 twinBees
 	"Twin Bees Shuttle"
 	
 	^ #(
 		#(14 29)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(2 1) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
 			#(0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0)
 			#(1 1 0 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
 			#(1 1 0 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1)
@@ -977,23 +967,23 @@ twinBees
 		#(380 615) 	"extent := #(ver hor) for morph"
 		)! !
 
-!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/2/2016 17:37'!
+!LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/6/2016 20:38'!
 unix
 	"Unix, a period 6 pulsator"
 	
 	^ #(
 		#(10 10)	"grid size := #(rows columns)"
-		#(1 1) 	"position := #(x y) to load pattern"
+		#(1 2) 	"position := #(x y) to load pattern"
 		
 		#(	"the pattern"
-			#(0 0 1 1 0 0 0 0 0 0)
-			#(0 0 1 1 0 0 0 0 0 0)
-			#(0 0 0 0 0 0 0 0 0 0)
-			#(0 0 1 0 0 0 0 0 0 0)
-			#(0 1 0 1 0 0 0 0 0 0)
-			#(0 1 0 0 1 0 0 1 1 0)
-			#(0 0 0 0 0 1 0 1 1 0)
-			#(0 0 0 1 1 0 0 0 0 0)
+			#(0 1 1 0 0 0 0 0)
+			#(0 1 1 0 0 0 0 0)
+			#(0 0 0 0 0 0 0 0)
+			#(0 1 0 0 0 0 0 0)
+			#(1 0 1 0 0 0 0 0)
+			#(1 0 0 1 0 0 1 1)
+			#(0 0 0 0 1 0 1 1)
+			#(0 0 1 1 0 0 0 0)
 			)
 		#(263 237) 	"extent := #(ver hor) for morph"
 		)! !
@@ -1129,6 +1119,38 @@ wavefront
 		#(380 322) 	"extent := #(ver hor) for morph"
 		)! !
 
+!LifeArray methodsFor: 'accessing' stamp: 'dhn 7/6/2016 15:41'!
+at: aPoint
+	"
+	Answer the element at aPoint, where:
+		row := aPoint x
+		col := aPoint y
+	"
+	
+	^ self i: aPoint x j: aPoint y! !
+
+!LifeArray methodsFor: 'accessing' stamp: 'dhn 7/6/2016 15:42'!
+at: aPoint put: anObject
+	"
+	Set the element at aPoint to anObject, where:
+		row := aPoint x
+		col := aPoint y
+	"
+	
+	^ self i: aPoint x j: aPoint y put: anObject! !
+
+!LifeArray methodsFor: 'accessing' stamp: 'dhn 7/6/2016 14:25'!
+elements
+	"Answer the value of elements"
+	
+	^ elements! !
+
+!LifeArray methodsFor: 'accessing' stamp: 'dhn 7/6/2016 14:26'!
+elements: anObject
+	"Set the value of elements"
+	
+	elements _ anObject! !
+
 !GridCell methodsFor: 'accessing' stamp: 'dhn 6/26/2016 08:48'!
 index
 	"Answer the value of index"
@@ -1141,11 +1163,10 @@ index: anObject
 
 	index _ anObject! !
 
-!GridCell methodsFor: 'initialization' stamp: 'dhn 6/26/2016 11:49'!
+!GridCell methodsFor: 'initialization' stamp: 'dhn 7/6/2016 15:44'!
 initialize
 
 	super initialize.
-	state _ 0.
 	offColor _ self color.
 	onColor _ Color lightGreen.
 	self setProperty: #'handlesMouseDown:' toValue: true
@@ -1170,32 +1191,28 @@ onColor
 
 	^ onColor! !
 
-!GridCell methodsFor: 'event handling' stamp: 'dhn 6/29/2016 08:05'!
+!GridCell methodsFor: 'event handling' stamp: 'dhn 7/6/2016 16:22'!
 performAction
 	"Identify the cell that was pressed; toggle its state and color"
 
 	model cellIndex: index.
-	state _ state = 0 ifTrue: [1] ifFalse: [0].
-	self color: (state = 1 ifTrue: [onColor] ifFalse: [offColor]).
+	model cells at: index put: 
+		((model cells at: index) = 0 ifTrue: [1] ifFalse: [0]).
+	self reflectState.
 	super performAction! !
 
-!GridCell methodsFor: 'accessing' stamp: 'dhn 6/26/2016 07:34'!
-state
-	"Answer the value of state"
+!GridCell methodsFor: 'accessing' stamp: 'dhn 7/6/2016 16:21'!
+reflectState
+	"Set color based on the state of the cell at index"
 	
-	^ state! !
+	self color: ((model cells at: index) = 1 ifTrue: [onColor] ifFalse: [offColor])
+! !
 
-!GridCell methodsFor: 'accessing' stamp: 'dhn 6/26/2016 11:50'!
-state: anObject
-	"Set the value of state"
-	
-	state _ anObject.
-	self color: (state = 1 ifTrue: [self onColor] ifFalse: [self offColor])! !
-
-!LifeView methodsFor: 'initialization' stamp: 'dhn 7/1/2016 21:56'!
+!LifeView methodsFor: 'initialization' stamp: 'dhn 7/6/2016 17:10'!
 buildMorphicWindow
 	"Set up the grid in a system window"
 	
+	gridArray _ model cells copy.
 	(1 to: model shape x) do: [:ea |
 		self layoutMorph
 			addMorph: (
@@ -1204,6 +1221,7 @@ buildMorphicWindow
 					 addAllMorphs: (self row: ea length: model shape y))].
 				
 	model when: #gridMenu send: #menuMain to: self.
+	model when: #stateChanged send: #stateChanged to: self.
 	model when: #period send: #updateTitle to: self! !
 
 !LifeView methodsFor: 'menu' stamp: 'dhn 7/4/2016 15:59'!
@@ -1323,20 +1341,21 @@ periodN: aNumber
 	
 	periodN _ aNumber! !
 
-!LifeView methodsFor: 'initialization' stamp: 'dhn 6/30/2016 18:13'!
+!LifeView methodsFor: 'initialization' stamp: 'dhn 7/6/2016 17:11'!
 row: aRow length: aNumber
 	"Answer aNumber of cells for aRow"
-	| col cell |
-	
+	| col morph |
+
 	col _ OrderedCollection new.
 	(1 to: aNumber) do: [:ea |
-		col add: 
-			((cell _ GridCell model: model action: nil)
+			morph _ GridCell model: model action: nil.
+			morph
 				index: aRow@ea;
 				roundButtonStyle: false;
-				layoutSpec: (LayoutSpec proportionalWidth: 0.2)).
-				model cells add: cell].
-	^ col reversed! !
+				layoutSpec: (LayoutSpec proportionalWidth: 0.2).
+				gridArray i: aRow j: ea put: morph.
+				col addFirst: morph].
+	^ col! !
 
 !LifeView methodsFor: 'menu' stamp: 'dhn 6/28/2016 15:32'!
 sayClear
@@ -1357,6 +1376,12 @@ sayStop
 	
 	runFlag _ false.
 	self stopStepping! !
+
+!LifeView methodsFor: 'change reporting' stamp: 'dhn 7/6/2016 17:15'!
+stateChanged
+	"Cause all the grid cells to reflect the state of the model"
+	
+	gridArray elements do: [:ea | ea reflectState]! !
 
 !LifeView methodsFor: 'menu' stamp: 'dhn 6/27/2016 15:10'!
 takeAStep
@@ -1381,18 +1406,18 @@ cellSize
 	
 	^ 30! !
 
-!LifeView class methodsFor: 'examples' stamp: 'dhn 7/2/2016 22:31'!
+!LifeView class methodsFor: 'examples' stamp: 'dhn 7/6/2016 21:59'!
 example
 	"
 	LifeView example
 	"
 	| life |
 
-	life _ LifeView rows: 8 cols: 9.
+	life _ LifeView open: 8@9.
 	life label: 'LIFE Example'
 ! !
 
-!LifeView class methodsFor: 'examples' stamp: 'dhn 7/2/2016 22:28'!
+!LifeView class methodsFor: 'examples' stamp: 'dhn 7/6/2016 22:01'!
 example1
 	"The pentadecathlon, a pulsar of period 15
 	
@@ -1400,17 +1425,26 @@ example1
 	"
 	| view |
 	
-	view _ LifeView rows: 10 cols: 18.
+	view _ LifeView open: 10@18.
 	view label: 'A LIFE Example'.
-	view model set: view model class pentadec third at: #(4 1).
+	view model set: view model class pentadec third at: #(4 5).
 	view sayRun
 ! !
 
-!LifeView class methodsFor: 'documentation' stamp: 'dhn 6/26/2016 07:21'!
-how
-	" Example:
-	LifeView rows: 8 cols: 9
-	"! !
+!LifeView class methodsFor: 'instance creation' stamp: 'dhn 7/6/2016 13:19'!
+open: aPoint
+	"Set up a game of Life on a grid of aPoint shape"
+	| mod win xx yy |
+	
+	mod _ LifeModel new.
+	mod shape: aPoint.
+	win _ self open: mod label: mod class defaultLabel.
+	xx _ 2 + self cellSize * aPoint y.
+	yy _ 2 + self cellSize * (aPoint x) + 22.
+	win extentAndPosition: (Point x: xx y: yy).
+	win lines: mod class menuLines.
+	win when: #morphicStep evaluate: [ :unused | mod nextState].
+	^ win! !
 
 !LifeView class methodsFor: 'instance creation' stamp: 'dhn 7/4/2016 15:58'!
 rows: rows cols: cols
