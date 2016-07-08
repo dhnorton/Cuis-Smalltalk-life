@@ -1,11 +1,11 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2829] on 7 July 2016 at 1:08:29.306886 pm'!
+'From Cuis 4.2 of 25 July 2013 [latest update: #2843] on 7 July 2016 at 8:43:58.308808 pm'!
 'Description The game of Life, an example of a cellular automaton, developed by Prof. John H. Conway at the University of Cambridge.
 
 References:
 ConwayLife.com
 Gardner, Martin, "Mathematical Games", Scientific American, October 1970, February 1971
 "Some Facts of Life", Byte Magazine, December 1978'!
-!provides: 'Life' 1 3!
+!provides: 'Life' 1 4!
 !classDefinition: #LifeModel category: #Life!
 TextModel subclass: #LifeModel
 	instanceVariableNames: 'shape cells cellIndex'
@@ -1413,7 +1413,7 @@ example
 	life label: 'LIFE Example'
 ! !
 
-!LifeView class methodsFor: 'examples' stamp: 'dhn 7/6/2016 22:01'!
+!LifeView class methodsFor: 'examples' stamp: 'dhn 7/7/2016 20:25'!
 example1
 	"The pentadecathlon, a pulsar of period 15
 	
@@ -1423,7 +1423,7 @@ example1
 	
 	view _ LifeView open: 10@18.
 	view label: 'A LIFE Example'.
-	view model set: view model class pentadec third at: #(4 5).
+	view model set: view model class pentadec third at: 4@5.
 	view sayRun
 ! !
 
