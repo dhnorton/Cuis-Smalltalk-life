@@ -28,9 +28,9 @@ The popup menu, displayed by clicking Mouse button 2, presents the following cho
 
 Dozens of patterns are available for loading.
 
-####Tested in Cuis 5.0  rev 2974
+#### Tested in Cuis 5.0  rev 2974
  
-####References
+#### References
 ConwayLife.com
 
 Gardner, Martin, "Mathematical Games", Scientific American, October 1970, February 1971
