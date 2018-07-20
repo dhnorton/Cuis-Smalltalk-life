@@ -1,11 +1,14 @@
-'From Cuis 4.2 of 25 July 2013 [latest update: #2843] on 7 July 2016 at 8:43:58.308808 pm'!
+'From Cuis 5.0 of 7 November 2016 [latest update: #3329] on 20 July 2018 at 4:08:24 pm'!
 'Description The game of Life, an example of a cellular automaton, developed by Prof. John H. Conway at the University of Cambridge.
 
 References:
 ConwayLife.com
 Gardner, Martin, "Mathematical Games", Scientific American, October 1970, February 1971
 "Some Facts of Life", Byte Magazine, December 1978'!
-!provides: 'Life' 1 4!
+!provides: 'Life' 1 5!
+SystemOrganization addCategory: #Life!
+
+
 !classDefinition: #LifeModel category: #Life!
 TextModel subclass: #LifeModel
 	instanceVariableNames: 'shape cells cellIndex'
@@ -94,6 +97,12 @@ clearGrid
 	(1 to: cells elements size) do: [:i | cells elements at: i put: 0].
 	self triggerEvent: #stateChanged! !
 
+!LifeModel methodsFor: 'accessing' stamp: 'dhn 6/26/2016 11:48'!
+shape
+	"Answer the value of shape"
+	
+	^ shape! !
+
 !LifeModel methodsFor: 'operation' stamp: 'dhn 7/6/2016 17:58'!
 nextState
 	"Determine the next state of the cells"
@@ -120,40 +129,6 @@ nextState
 	self triggerEvent: #stateChanged.
 	self triggerEvent: #period! !
 
-!LifeModel methodsFor: 'initialization' stamp: 'dhn 7/7/2016 10:04'!
-set: pattern at: coords
-	"Load pattern into cells, starting at: coords, specifying the upper left cell location"
-	"A pattern should be a collection of rows of equal length which are used to set initial state"
-	| arr left depth |
-	
-	arr _ LifeArray height: pattern size width: pattern first size.
-	arr fillWithArrayOfArrays: pattern.
-	left _ coords y - 1 min: 0.
-	depth _ (coords x - 1 min: 0) + arr height.
-	(cells width >= (left + arr width) and: [cells height >= depth]) 
-		ifTrue: [
-			(0 to: (arr height - 1)) do: [:row | 
-				(0 to: (arr width - 1)) do: [:col | 
-					cells i: row + coords x j: col + coords y put: (arr i: row + 1 j: col + 1)]].
-			self triggerEvent: #stateChanged]
-		ifFalse: [nil inform: 'Life form too big for grid or 
-not located high enough.']
-! !
-
-!LifeModel methodsFor: 'accessing' stamp: 'dhn 6/26/2016 11:48'!
-shape
-	"Answer the value of shape"
-	
-	^ shape! !
-
-!LifeModel methodsFor: 'initialization' stamp: 'dhn 7/6/2016 15:53'!
-shape: aPoint
-	"Set the number of rows and columns of the grid"
-	
-	shape _ aPoint.
-	cells _ LifeArray height: aPoint x width: aPoint y.
-	self clearGrid! !
-
 !LifeModel methodsFor: 'operation' stamp: 'dhn 6/26/2016 08:52'!
 surrounding: aPoint
 	"Answer the 3, 5, or 8 cells surrounding aPoint"
@@ -174,6 +149,34 @@ surrounding: aPoint
 	
 	^ sur select: [:p | p y <= shape y and: [p y > 0]]
 ! !
+
+!LifeModel methodsFor: 'initialization' stamp: 'dhn 7/7/2016 10:04'!
+set: pattern at: coords
+	"Load pattern into cells, starting at: coords, specifying the upper left cell location"
+	"A pattern should be a collection of rows of equal length which are used to set initial state"
+	| arr left depth |
+	
+	arr _ LifeArray height: pattern size width: pattern first size.
+	arr fillWithArrayOfArrays: pattern.
+	left _ coords y - 1 min: 0.
+	depth _ (coords x - 1 min: 0) + arr height.
+	(cells width >= (left + arr width) and: [cells height >= depth]) 
+		ifTrue: [
+			(0 to: (arr height - 1)) do: [:row | 
+				(0 to: (arr width - 1)) do: [:col | 
+					cells i: row + coords x j: col + coords y put: (arr i: row + 1 j: col + 1)]].
+			self triggerEvent: #stateChanged]
+		ifFalse: [nil inform: 'Life form too big for grid or 
+not located high enough.']
+! !
+
+!LifeModel methodsFor: 'initialization' stamp: 'dhn 7/6/2016 15:53'!
+shape: aPoint
+	"Set the number of rows and columns of the grid"
+	
+	shape _ aPoint.
+	cells _ LifeArray height: aPoint x width: aPoint y.
+	self clearGrid! !
 
 !LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:42'!
 basic
@@ -283,12 +286,6 @@ clock
 			)
 		'182@192' 	"extent hor@ver for morph"
 		) evalStrings! !
-
-!LifeModel class methodsFor: 'documentation' stamp: 'dhn 6/28/2016 14:59'!
-defaultLabel
-	"Answer the label used when no life form has been loaded"
-	
-	^ 'The Game of Life'! !
 
 !LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:46'!
 eaterBoundA
@@ -521,30 +518,6 @@ mazing
 		'250@300' 	"extent hor@ver for morph"
 		) evalStrings! !
 
-!LifeModel class methodsFor: 'database' stamp: 'dhn 7/2/2016 10:23'!
-menuLines
-	"Answer where to place lines in the Life Forms menu"
-	| nm ln |
-	
-	nm _ OrderedCollection new.
-	self patternNames do: [:ea | nm add: ea first].
-	
-	ln _ OrderedCollection new.
-	#(
-		'Tripole' 
-		'Period 2 Oscillator'
-		'Period 3 Eater' 
-		'Unix' 
-		'Period 9 Object' 
-		'Twin Bees Shuttle'
-		'Eater Bound B'
-		'Heavy Spaceship'
-		'Period 6 Oscillator'
-		'New Gun'
-	) do: [:ea | ln add: (nm findFirst: [:s | s = ea])].
-	
-	^ ln! !
-
 !LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:31'!
 mitOsc
 	"MIT Oscillator, a period 3 object"
@@ -613,51 +586,6 @@ newGun
 			)
 		'590@700' 	"extent hor@ver for morph"
 		) evalStrings! !
-
-!LifeModel class methodsFor: 'database' stamp: 'dhn 7/2/2016 15:05'!
-patternNames
-	"Translate a menu list item to a class method selector for the pattern"
-	^ #(
-		('Blinker' 					#blinker)
-		('Beacon' 					#beacon)
-		('Clock' 					#clock)
-		('Toad' 					#toad)
-		('Bipole' 					#bipole)
-		('Tripole' 					#tripole)
-		('Flipflop A' 				#flipflopA)
-		('Flipflop B' 				#flipflopB)
-		('Flipflop C' 				#flipflopC)
-		('Flipflop D' 				#flipflopD)
-		('Period 2 Oscillator' 	#period2)
-		('Period 6 Eater' 			#period6)
-		('Block Eats Beehive' 	#hiveEater)
-		('Period 3 Eater' 			#period3)
-		('Pulsar' 					#pulsar)
-		('Tumbler' 				#tumbler)
-		('Period 8 Inductor' 		#unnamed1)
-		('Pentadecathlon' 		#pentadec)
-		('Mazing' 					#mazing	)
-		('Unix' 						#unix)
-		('MIT Oscillator' 			#mitOsc	)
-		('Berloaferlmeter' 		#berloaf)
-		('Period 8 Object' 		#unnamed2)
-		('Wavefront' 				#wavefront)
-		('Period 5 Oscillator' 	#unnamed3)
-		('Period 9 Object' 		#unnamed4)
-		('Basic Shuttle' 			#basic)
-		('Twin Bees Shuttle' 		#twinBees)
-		('Eater Bound A' 			#eaterBoundA)
-		('Eater Bound B' 			#eaterBoundB)
-		('Glider' 					#glider)
-		('Light Spaceship' 		#space1)
-		('Medium Spaceship' 	#space2)
-		('Heavy Spaceship' 		#space3)
-		('Period 52 Eater' 		#period52)
-		('Period 6 Oscillator' 	#period6O)
-		('Glider Gun' 				#gliderGun)
-		('New Gun' 				#newGun)
-		('Switch Engine' 			#engine)
-	)! !
 
 !LifeModel class methodsFor: 'canned patterns' stamp: 'dhn 7/7/2016 12:24'!
 pentadec
@@ -1119,6 +1047,81 @@ wavefront
 		'320@380' 	"extent hor@ver for morph"
 		) evalStrings! !
 
+!LifeModel class methodsFor: 'documentation' stamp: 'dhn 6/28/2016 14:59'!
+defaultLabel
+	"Answer the label used when no life form has been loaded"
+	
+	^ 'The Game of Life'! !
+
+!LifeModel class methodsFor: 'database' stamp: 'dhn 7/2/2016 10:23'!
+menuLines
+	"Answer where to place lines in the Life Forms menu"
+	| nm ln |
+	
+	nm _ OrderedCollection new.
+	self patternNames do: [:ea | nm add: ea first].
+	
+	ln _ OrderedCollection new.
+	#(
+		'Tripole' 
+		'Period 2 Oscillator'
+		'Period 3 Eater' 
+		'Unix' 
+		'Period 9 Object' 
+		'Twin Bees Shuttle'
+		'Eater Bound B'
+		'Heavy Spaceship'
+		'Period 6 Oscillator'
+		'New Gun'
+	) do: [:ea | ln add: (nm findFirst: [:s | s = ea])].
+	
+	^ ln! !
+
+!LifeModel class methodsFor: 'database' stamp: 'dhn 7/2/2016 15:05'!
+patternNames
+	"Translate a menu list item to a class method selector for the pattern"
+	^ #(
+		('Blinker' 					#blinker)
+		('Beacon' 					#beacon)
+		('Clock' 					#clock)
+		('Toad' 					#toad)
+		('Bipole' 					#bipole)
+		('Tripole' 					#tripole)
+		('Flipflop A' 				#flipflopA)
+		('Flipflop B' 				#flipflopB)
+		('Flipflop C' 				#flipflopC)
+		('Flipflop D' 				#flipflopD)
+		('Period 2 Oscillator' 	#period2)
+		('Period 6 Eater' 			#period6)
+		('Block Eats Beehive' 	#hiveEater)
+		('Period 3 Eater' 			#period3)
+		('Pulsar' 					#pulsar)
+		('Tumbler' 				#tumbler)
+		('Period 8 Inductor' 		#unnamed1)
+		('Pentadecathlon' 		#pentadec)
+		('Mazing' 					#mazing	)
+		('Unix' 						#unix)
+		('MIT Oscillator' 			#mitOsc	)
+		('Berloaferlmeter' 		#berloaf)
+		('Period 8 Object' 		#unnamed2)
+		('Wavefront' 				#wavefront)
+		('Period 5 Oscillator' 	#unnamed3)
+		('Period 9 Object' 		#unnamed4)
+		('Basic Shuttle' 			#basic)
+		('Twin Bees Shuttle' 		#twinBees)
+		('Eater Bound A' 			#eaterBoundA)
+		('Eater Bound B' 			#eaterBoundB)
+		('Glider' 					#glider)
+		('Light Spaceship' 		#space1)
+		('Medium Spaceship' 	#space2)
+		('Heavy Spaceship' 		#space3)
+		('Period 52 Eater' 		#period52)
+		('Period 6 Oscillator' 	#period6O)
+		('Glider Gun' 				#gliderGun)
+		('New Gun' 				#newGun)
+		('Switch Engine' 			#engine)
+	)! !
+
 !LifeArray methodsFor: 'accessing' stamp: 'dhn 7/6/2016 15:41'!
 at: aPoint
 	"
@@ -1163,6 +1166,25 @@ index: anObject
 
 	index _ anObject! !
 
+!GridCell methodsFor: 'accessing' stamp: 'dhn 6/25/2016 14:55'!
+offColor
+	"Answer the value of offColor"
+
+	^ offColor! !
+
+!GridCell methodsFor: 'accessing' stamp: 'dhn 6/25/2016 14:56'!
+onColor
+	"Answer the value of onColor"
+
+	^ onColor! !
+
+!GridCell methodsFor: 'accessing' stamp: 'dhn 7/6/2016 16:21'!
+reflectState
+	"Set color based on the state of the cell at index"
+	
+	self color: ((model cells at: index) = 1 ifTrue: [onColor] ifFalse: [offColor])
+! !
+
 !GridCell methodsFor: 'initialization' stamp: 'dhn 7/6/2016 15:44'!
 initialize
 
@@ -1179,18 +1201,6 @@ mouseButton2Down: event localPosition: point
 	model triggerEvent: #gridMenu
 ! !
 
-!GridCell methodsFor: 'accessing' stamp: 'dhn 6/25/2016 14:55'!
-offColor
-	"Answer the value of offColor"
-
-	^ offColor! !
-
-!GridCell methodsFor: 'accessing' stamp: 'dhn 6/25/2016 14:56'!
-onColor
-	"Answer the value of onColor"
-
-	^ onColor! !
-
 !GridCell methodsFor: 'event handling' stamp: 'dhn 7/6/2016 16:22'!
 performAction
 	"Identify the cell that was pressed; toggle its state and color"
@@ -1200,13 +1210,6 @@ performAction
 		((model cells at: index) = 0 ifTrue: [1] ifFalse: [0]).
 	self reflectState.
 	super performAction! !
-
-!GridCell methodsFor: 'accessing' stamp: 'dhn 7/6/2016 16:21'!
-reflectState
-	"Set color based on the state of the cell at index"
-	
-	self color: ((model cells at: index) = 1 ifTrue: [onColor] ifFalse: [offColor])
-! !
 
 !LifeView methodsFor: 'initialization' stamp: 'dhn 7/6/2016 17:10'!
 buildMorphicWindow
@@ -1223,6 +1226,39 @@ buildMorphicWindow
 	model when: #gridMenu send: #menuMain to: self.
 	model when: #stateChanged send: #stateChanged to: self.
 	model when: #period send: #updateTitle to: self! !
+
+!LifeView methodsFor: 'initialization' stamp: 'dhn 7/4/2016 15:57'!
+extentAndPosition: aPoint
+	"Set the extent of the receiver and center it in the display"
+	
+	self 
+		morphExtent: aPoint;
+		morphPosition: Display center - (self morphExtent / 2.0)
+	! !
+
+!LifeView methodsFor: 'initialization' stamp: 'dhn 6/28/2016 11:12'!
+initialize
+
+	super initialize.
+	runFlag _ false.
+	stepDelay _ 500
+! !
+
+!LifeView methodsFor: 'initialization' stamp: 'dhn 7/6/2016 17:11'!
+row: aRow length: aNumber
+	"Answer aNumber of cells for aRow"
+	| col morph |
+
+	col _ OrderedCollection new.
+	(1 to: aNumber) do: [:ea |
+			morph _ GridCell model: model action: nil.
+			morph
+				index: aRow@ea;
+				roundButtonStyle: false;
+				layoutSpec: (LayoutSpec proportionalWidth: 0.2).
+				gridArray i: aRow j: ea put: morph.
+				col addFirst: morph].
+	^ col! !
 
 !LifeView methodsFor: 'menu' stamp: 'dhn 7/7/2016 12:01'!
 experiment
@@ -1242,35 +1278,6 @@ experiment
 				]
 			ifEmpty: [^ nil]
 		].! !
-
-!LifeView methodsFor: 'initialization' stamp: 'dhn 7/4/2016 15:57'!
-extentAndPosition: aPoint
-	"Set the extent of the receiver and center it in the display"
-	
-	self 
-		morphExtent: aPoint;
-		morphPosition: Display center - (self morphExtent / 2.0)
-	! !
-
-!LifeView methodsFor: 'initialization' stamp: 'dhn 6/28/2016 11:12'!
-initialize
-
-	super initialize.
-	runFlag _ false.
-	stepDelay _ 500
-! !
-
-!LifeView methodsFor: 'label' stamp: 'dhn 7/2/2016 09:30'!
-label
-	"Answer the value of label"
-	
-	^ label! !
-
-!LifeView methodsFor: 'label' stamp: 'dhn 7/1/2016 22:10'!
-label: aString
-	"Set the value of label"
-	
-	label  _ aString! !
 
 !LifeView methodsFor: 'menu' stamp: 'dhn 6/28/2016 21:58'!
 lines: anObject
@@ -1298,22 +1305,21 @@ loadPattern
 		nww extentAndPosition: arr fourth.
 		self delete "delete old view"]! !
 
-!LifeView methodsFor: 'menu' stamp: 'dhn 7/2/2016 11:47'!
+!LifeView methodsFor: 'menu' stamp: 'dhn 7/20/2018 16:06:50'!
 menuMain
-	"Answer the main pop-up menu"
+	"Show the main pop-up menu"
 	
 	| aMenu |
 	aMenu _ MenuMorph new defaultTarget: self.
 	
-	aMenu addList: #(
-		('Run/Pause'				pauseResume)
-		('Step'						takeAStep)
-		('Stop'						sayStop)
-		('Clear'					sayClear)
-		('Load...'					loadPattern)
-		('Experiment...'			experiment)
-		).
-
+	aMenu 
+		add: 'Run/Pause'			action: #pauseResume;
+		add: 'Step'				action: #takeAStep;
+		add: 'Stop'				action: #sayStop;
+		add: 'Clear'				action: #sayClear;
+		add: 'Load...'				action: #loadPattern;
+		add: 'Experiment...'		action: #experiment.
+		
 	aMenu openInHand! !
 
 !LifeView methodsFor: 'menu' stamp: 'dhn 6/28/2016 11:13'!
@@ -1323,35 +1329,6 @@ pauseResume
 	(runFlag _ runFlag not)
 		ifTrue: [self sayRun]
 		ifFalse: [self sayStop]! !
-
-!LifeView methodsFor: 'label' stamp: 'dhn 7/1/2016 22:06'!
-periodN
-	"Answer the value of period"
-	
-	periodN ifNil: [periodN _ 0].
-	^ periodN! !
-
-!LifeView methodsFor: 'label' stamp: 'dhn 7/1/2016 22:07'!
-periodN: aNumber
-	"Set the value of periodN"
-	
-	periodN _ aNumber! !
-
-!LifeView methodsFor: 'initialization' stamp: 'dhn 7/6/2016 17:11'!
-row: aRow length: aNumber
-	"Answer aNumber of cells for aRow"
-	| col morph |
-
-	col _ OrderedCollection new.
-	(1 to: aNumber) do: [:ea |
-			morph _ GridCell model: model action: nil.
-			morph
-				index: aRow@ea;
-				roundButtonStyle: false;
-				layoutSpec: (LayoutSpec proportionalWidth: 0.2).
-				gridArray i: aRow j: ea put: morph.
-				col addFirst: morph].
-	^ col! !
 
 !LifeView methodsFor: 'menu' stamp: 'dhn 6/28/2016 15:32'!
 sayClear
@@ -1373,17 +1350,36 @@ sayStop
 	runFlag _ false.
 	self stopStepping! !
 
-!LifeView methodsFor: 'change reporting' stamp: 'dhn 7/6/2016 17:15'!
-stateChanged
-	"Cause all the grid cells to reflect the state of the model"
-	
-	gridArray elements do: [:ea | ea reflectState]! !
-
 !LifeView methodsFor: 'menu' stamp: 'dhn 6/27/2016 15:10'!
 takeAStep
 	"Do one cycle"
 	
 	model nextState! !
+
+!LifeView methodsFor: 'label' stamp: 'dhn 7/2/2016 09:30'!
+label
+	"Answer the value of label"
+	
+	^ label! !
+
+!LifeView methodsFor: 'label' stamp: 'dhn 7/1/2016 22:10'!
+label: aString
+	"Set the value of label"
+	
+	label  _ aString! !
+
+!LifeView methodsFor: 'label' stamp: 'dhn 7/1/2016 22:06'!
+periodN
+	"Answer the value of period"
+	
+	periodN ifNil: [periodN _ 0].
+	^ periodN! !
+
+!LifeView methodsFor: 'label' stamp: 'dhn 7/1/2016 22:07'!
+periodN: aNumber
+	"Set the value of periodN"
+	
+	periodN _ aNumber! !
 
 !LifeView methodsFor: 'label' stamp: 'dhn 7/1/2016 22:04'!
 updateTitle
@@ -1396,36 +1392,17 @@ updateTitle
 			nextPut: $ ;
 			nextPutAll: periodN asString])! !
 
+!LifeView methodsFor: 'change reporting' stamp: 'dhn 7/6/2016 17:15'!
+stateChanged
+	"Cause all the grid cells to reflect the state of the model"
+	
+	gridArray elements do: [:ea | ea reflectState]! !
+
 !LifeView class methodsFor: 'instance creation' stamp: 'dhn 6/29/2016 15:35'!
 cellSize
 	"Answer the target size for a grid cell"
 	
 	^ 30! !
-
-!LifeView class methodsFor: 'examples' stamp: 'dhn 7/6/2016 21:59'!
-example
-	"
-	LifeView example
-	"
-	| life |
-
-	life _ LifeView open: 8@9.
-	life label: 'LIFE Example'
-! !
-
-!LifeView class methodsFor: 'examples' stamp: 'dhn 7/7/2016 20:25'!
-example1
-	"The pentadecathlon, a pulsar of period 15
-	
-	LifeView example1.
-	"
-	| view |
-	
-	view _ LifeView open: 10@18.
-	view label: 'A LIFE Example'.
-	view model set: view model class pentadec third at: 4@5.
-	view sayRun
-! !
 
 !LifeView class methodsFor: 'instance creation' stamp: 'dhn 7/6/2016 13:19'!
 open: aPoint
@@ -1455,3 +1432,28 @@ rows: rows cols: cols
 	win lines: mod class menuLines.
 	win when: #morphicStep evaluate: [ :unused | mod nextState].
 	^ win! !
+
+!LifeView class methodsFor: 'examples' stamp: 'dhn 7/6/2016 21:59'!
+example
+	"
+	LifeView example
+	"
+	| life |
+
+	life _ LifeView open: 8@9.
+	life label: 'LIFE Example'
+! !
+
+!LifeView class methodsFor: 'examples' stamp: 'dhn 7/7/2016 20:25'!
+example1
+	"The pentadecathlon, a pulsar of period 15
+	
+	LifeView example1.
+	"
+	| view |
+	
+	view _ LifeView open: 10@18.
+	view label: 'A LIFE Example'.
+	view model set: view model class pentadec third at: 4@5.
+	view sayRun
+! !
