@@ -1,11 +1,11 @@
-'From Cuis 5.0 of 7 November 2016 [latest update: #3329] on 20 July 2018 at 4:08:24 pm'!
+'From Cuis 5.0 of 7 November 2016 [latest update: #3383] on 29 July 2018 at 12:51:41 pm'!
 'Description The game of Life, an example of a cellular automaton, developed by Prof. John H. Conway at the University of Cambridge.
 
 References:
 ConwayLife.com
 Gardner, Martin, "Mathematical Games", Scientific American, October 1970, February 1971
 "Some Facts of Life", Byte Magazine, December 1978'!
-!provides: 'Life' 1 5!
+!provides: 'Life' 1 6!
 SystemOrganization addCategory: #Life!
 
 
@@ -61,8 +61,10 @@ Give access to #elements iVar.!
 !GridCell commentStamp: 'dhn 6/25/2016 14:53' prior: 0!
 A cell in the game of Life.!
 
-!LifeView commentStamp: 'dhn 6/27/2016 16:25' prior: 0!
+!LifeView commentStamp: '<historical>' prior: 0!
 A view for the Life model, an example of a cellular automaton. The Life game was developed by Prof. John H. Conway at the University of Cambridge.
+
+LifeView example1
 
 Gardner, Martin, "Mathematical Games", Scientific American, October 1970, February 1971
 "Some Facts of Life", Byte Magazine, December 1978!
