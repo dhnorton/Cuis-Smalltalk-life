@@ -1,4 +1,4 @@
-## Cuis-Smalltalk-life
+## Life
 The game of Life is an example of a cellular automaton. It was developed by Prof. John H. Conway at the University of Cambridge. Cells are displayed on a grid, analogous to graph paper, and live or die by the following rules:
 
 - a live cell surrounded by 2 or 3 other live cells will continue to live
@@ -26,7 +26,7 @@ The popup menu, displayed by clicking Mouse button 2, presents the following cho
 - Load...
 - Experiment...
 
-Dozens of patterns are available for loading.
+The Load... option provides dozens of patterns for loading.
 
 #### Tested in Cuis 5.0  rev 3622 on 2/22/2019
  
